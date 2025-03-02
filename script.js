@@ -1,11 +1,15 @@
 
-var timer;
+var missleTimer;
+var keyPressTimer;
+
 let canvasSize = [800,600];                             // size of playing field
 var shipDirection = 359;
 var shipSpeed = 0;
 var shipPosition = [canvasSize[0]/2, canvasSize[1]/2];
 
-var bullets = [];
+var missiles = [];
+const missleDelay = 5;
+var missileTimerCount = 0;
 
 var offset = 120;
 
@@ -56,17 +60,21 @@ function updateShip(position, direction, color) {
 
 }
 
-function drawBullets() {
-    for (let i = 0; i < bullets.length; i++) {
-        updateBullet(bullets[i], i);
+function drawMissiles() {
+    if (missileTimerCount > 0) {
+        missileTimerCount--;
+    }
+
+    for (let i = 0; i < missiles.length; i++) {
+        updateMissiles(missiles[i], i);
     }
 }
 
-function updateBullet(bullet, i) {
+function updateMissiles(missile, i) {
 
-    const position = bullet[0];
-    const direction = bullet[1];
-    const color = bullet[2];
+    const position = missile[0];
+    const direction = missile[1];
+    const color = missile[2];
 
     const startPosition = [
         position[0] + Math.cos((direction + offset) * Math.PI / 180) * 20,
@@ -87,29 +95,37 @@ function updateBullet(bullet, i) {
     ctx.strokeStyle = color;
     ctx.stroke();
 
-    bullet[0] = endPosition;
+    missile[0] = endPosition;
 
     if (endPosition[0] < 0 || endPosition[0] > canvasSize[0] || endPosition[1] < 0 || endPosition[1] > canvasSize[1]) {
-        bullets.splice(i, 1);
+        missiles.splice(i, 1);
     }
 }
 
-function fireBullet() {
-    bullets.push([shipPosition, shipDirection, shipColour]);
+function fireMissile() {
+    if (missileTimerCount || missiles.length > 2) return;
+    missiles.push([shipPosition, shipDirection, shipColour]);
+    missileTimerCount = missleDelay;
 }
 
 function gameLoop() {
     drawShip();
-    drawBullets();
+    drawMissiles();
 }
 
 function startGame() {
     resetCanvas();
-    timer = setInterval(gameLoop, 100);
+    startTimers();
+}
+
+function startTimers() {
+    missleTimer = setInterval(gameLoop, 100);
+    keyPressTimer = setInterval(checkKeyMap, 50);
 }
 
 function stopGame() {
-    clearInterval(timer);
+    clearInterval(missleTimer);
+    clearInterval(keyPressTimer);
 }
 
 function resetCanvas() {
@@ -138,7 +154,7 @@ function checkKeyMap() {
 function keyPress(key) {
 
     switch (key) {
-        case " ": fireBullet(); break
+        case " ": fireMissile(); break
         case "ArrowUp": shipSpeed++; break;
         case "ArrowDown": shipSpeed--; break;
         case "ArrowLeft": shipDirection -= 4; break;
@@ -161,7 +177,6 @@ window.addEventListener("keydown", function (event) {   // keyboard event listne
     if (!keyMap.includes(event.key)) {
         keyMap.push(event.key);
     }
-    checkKeyMap();
     event.preventDefault();
 }, true);
 
@@ -172,7 +187,6 @@ window.addEventListener("keyup", function (event) {   // keyboard event listner
     if (keyMap.includes(event.key)) {
         keyMap.splice(keyMap.indexOf(event.key), 1);
     }
-    checkKeyMap();
     event.preventDefault();
 }, true);
 
