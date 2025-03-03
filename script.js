@@ -31,6 +31,7 @@ var ctx = doc.getContext("2d");                         // canvas context
 function gameLoop() {
     drawShip();
     drawMissiles();
+    drawAsteroids();
 }
 
 function drawShip() {
@@ -131,37 +132,37 @@ function drawAsteroids() {
 }
 function updateAsteroids(asteroid, i) {
 
-    if (asteroid[0] < -10 || asteroid[0] > canvasSize[0] + 10 || asteroid[1] < -10 || asteroid[1] > canvasSize[1] + 10) {
-        asteroids.splice(i, 1);
-    }
-    
-    // const sides = Math.floor(Math.random() * 5) + 8;
-    // const radius = Math.floor(Math.random() * 10) + 5;
-    // ctx.beginPath();
-    // ctx.moveTo(asteroid[0] + Math.cos(0 * Math.PI / 180) * radius, asteroid[1] + Math.sin(0 * Math.PI / 180) * radius);
-    // for (let i = 1; i < sides; i++) {
-    //     ctx.lineTo(asteroid[0] + Math.cos(i * 360 / sides * Math.PI / 180) * radius, asteroid[1] + Math.sin(i * 360 / sides * Math.PI / 180) * radius);
+    // if (asteroid[0] < -10 || asteroid[0] > canvasSize[0] + 10 || asteroid[1] < -10 || asteroid[1] > canvasSize[1] + 10) {
+    //     asteroids.splice(i, 1);
     // }
-    // ctx.closePath();
+    
+    ctx.beginPath();
+    ctx.moveTo(asteroid[0], asteroid[1]);
+    ctx.lineTo(asteroid[0] + asteroid[2], asteroid[1]-asteroid[2]*0.3);
+    ctx.lineTo(asteroid[0] + asteroid[2]*1.3, asteroid[1] + asteroid[2]*0.3);
+    ctx.lineTo(asteroid[0] + asteroid[2]*0.7, asteroid[1] + asteroid[2]*1.3);
+    ctx.lineTo(asteroid[0], asteroid[1] + asteroid[2]);
+    ctx.closePath();
 
-    // ctx.lineWidth = 1;
-    // ctx.strokeStyle = shipColour;
-    // ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = shipColour;
+    ctx.stroke();
 
 }
 
 function addAsteroid() {
-    var x = Math.floor(Math.random() * canvasSize[0]);
-    var y = Math.floor(Math.random() * canvasSize[1]);
+    const x = Math.floor(Math.random() * canvasSize[0]);
+    const y = Math.floor(Math.random() * canvasSize[1]);
+    const f = Math.floor(Math.random() * 25) + 5;
 
-    if (x > canvasSize[0] / 2) {
-        x = -10;
-    }
-    if (y > canvasSize[1] / 2) {
-        y = -10;
-    }
+    // if (x > canvasSize[0] / 2) {
+    //     x = 0;
+    // }
+    // if (y > canvasSize[1] / 2) {
+    //     y = canvasSize[1];
+    // }
 
-    asteroids.push([x, y]);
+    asteroids.push([x, y, f]);
 }
 
 function startGame() {
