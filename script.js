@@ -1,9 +1,18 @@
 
-var missleTimer;
+var mainTimer;
+var asteroidTimer;
 var keyPressTimer;
 
-let canvasSize = [800,600];                             // size of playing field
-var shipDirection = 359;
+var keyMap = [];
+
+var shipColour = "#FFF";
+const backgroundColour = "#000";
+const canvasSize = [800,600];
+const startDirection = 150;
+const angleOffset = 120;
+
+var shipDirection = startDirection;
+var shipHeading = shipDirection
 var shipSpeed = 0;
 var shipPosition = [canvasSize[0]/2, canvasSize[1]/2];
 
@@ -11,7 +20,7 @@ var missiles = [];
 const missleDelay = 5;
 var missileTimerCount = 0;
 
-var offset = 120;
+var asteroids = [];
 
 var score = 0;
 var doc = document.getElementById("main");              // canvas to draw on
@@ -19,20 +28,22 @@ var options = document.getElementById("options");       // options section
 var scoreSpan = document.getElementById("score");       // score span to update current score
 var ctx = doc.getContext("2d");                         // canvas context
 
-var shipColour = "#FFF";
-const backgroundColour = "#000";
+function gameLoop() {
+    drawShip();
+    drawMissiles();
+}
 
 function drawShip() {
     ctx.fillStyle = backgroundColour;
     ctx.fillRect(0, 0, canvasSize[0], canvasSize[1]);
-    updateShip(shipPosition, shipDirection, shipColour);
+    updateShip(shipPosition, shipDirection, shipHeading, shipColour);
 }
 
-function updateShip(position, direction, color) {
+function updateShip(position, direction, heading, color) {
     
     const endPosition = [
-        position[0] + Math.cos((direction + offset) * Math.PI / 180) * shipSpeed,
-        position[1] + Math.sin((direction + offset) * Math.PI / 180) * shipSpeed
+        position[0] + Math.cos((heading + angleOffset) * Math.PI / 180) * shipSpeed,
+        position[1] + Math.sin((heading + angleOffset) * Math.PI / 180) * shipSpeed
     ];
 
     ctx.beginPath();
@@ -43,12 +54,12 @@ function updateShip(position, direction, color) {
         position[1] + Math.sin(direction * Math.PI / 180) * 20
     )
     ctx.lineTo(
-        position[0] + Math.cos((direction + offset) * Math.PI / 180) * 20,
-        position[1] + Math.sin((direction + offset) * Math.PI / 180) * 20
+        position[0] + Math.cos((direction + angleOffset) * Math.PI / 180) * 20,
+        position[1] + Math.sin((direction + angleOffset) * Math.PI / 180) * 20
     )
     ctx.lineTo(
-        position[0] + Math.cos((direction - offset) * Math.PI / 180) * 20,
-        position[1] + Math.sin((direction - offset) * Math.PI / 180) * 20
+        position[0] + Math.cos((direction - angleOffset) * Math.PI / 180) * 20,
+        position[1] + Math.sin((direction - angleOffset) * Math.PI / 180) * 20
     )
     ctx.closePath();
 
@@ -77,13 +88,13 @@ function updateMissiles(missile, i) {
     const color = missile[2];
 
     const startPosition = [
-        position[0] + Math.cos((direction + offset) * Math.PI / 180) * 20,
-        position[1] + Math.sin((direction + offset) * Math.PI / 180) * 20
+        position[0] + Math.cos((direction + angleOffset) * Math.PI / 180) * 20,
+        position[1] + Math.sin((direction + angleOffset) * Math.PI / 180) * 20
     ];
 
     const endPosition = [
-        startPosition[0] + Math.cos((direction + offset) * Math.PI / 180) * 10,
-        startPosition[1] + Math.sin((direction + offset) * Math.PI / 180) * 10
+        startPosition[0] + Math.cos((direction + angleOffset) * Math.PI / 180) * 10,
+        startPosition[1] + Math.sin((direction + angleOffset) * Math.PI / 180) * 10
     ];
 
     ctx.beginPath();
@@ -108,44 +119,70 @@ function fireMissile() {
     missileTimerCount = missleDelay;
 }
 
-function gameLoop() {
-    drawShip();
-    drawMissiles();
+function asteroidLoop() {
+    console.log(asteroids);
+    addAsteroid();
+}
+
+function drawAsteroids() {
+    for (let i = 0; i < asteroids.length; i++) {
+        updateAsteroids(asteroids[i], i);
+    }
+}
+function updateAsteroids(asteroid, i) {
+
+    if (asteroid[0] < -10 || asteroid[0] > canvasSize[0] + 10 || asteroid[1] < -10 || asteroid[1] > canvasSize[1] + 10) {
+        asteroids.splice(i, 1);
+    }
+    
+    // const sides = Math.floor(Math.random() * 5) + 8;
+    // const radius = Math.floor(Math.random() * 10) + 5;
+    // ctx.beginPath();
+    // ctx.moveTo(asteroid[0] + Math.cos(0 * Math.PI / 180) * radius, asteroid[1] + Math.sin(0 * Math.PI / 180) * radius);
+    // for (let i = 1; i < sides; i++) {
+    //     ctx.lineTo(asteroid[0] + Math.cos(i * 360 / sides * Math.PI / 180) * radius, asteroid[1] + Math.sin(i * 360 / sides * Math.PI / 180) * radius);
+    // }
+    // ctx.closePath();
+
+    // ctx.lineWidth = 1;
+    // ctx.strokeStyle = shipColour;
+    // ctx.stroke();
+
+}
+
+function addAsteroid() {
+    var x = Math.floor(Math.random() * canvasSize[0]);
+    var y = Math.floor(Math.random() * canvasSize[1]);
+
+    if (x > canvasSize[0] / 2) {
+        x = -10;
+    }
+    if (y > canvasSize[1] / 2) {
+        y = -10;
+    }
+
+    asteroids.push([x, y]);
 }
 
 function startGame() {
     resetCanvas();
     startTimers();
+    addAsteroid();
 }
 
 function startTimers() {
-    missleTimer = setInterval(gameLoop, 100);
-    keyPressTimer = setInterval(checkKeyMap, 50);
+    mainTimer = setInterval(gameLoop, 100);
+    asteroidTimer = setInterval(asteroidLoop, 10000);
+    keyPressTimer = setInterval(inputLoop, 50);
 }
 
 function stopGame() {
-    clearInterval(missleTimer);
     clearInterval(keyPressTimer);
+    clearInterval(mainTimer);
+    clearInterval(asteroidTimer);
 }
 
-function resetCanvas() {
-    shipDirection = 0;
-    shipSpeed = 0;
-    scoreSpan.innerHTML = score = 0;
-
-    doc.width = canvasSize[0];
-    doc.height = canvasSize[1];
-    options.style.width = canvasSize[0];
-
-    shipPosition[0] = canvasSize[0]/2;
-    shipPosition[1] = canvasSize[1]/2;
-
-    ctx.fillStyle = backgroundColour;
-    ctx.fillRect(0, 0, canvasSize[0], canvasSize[1]);
-}
-
-function checkKeyMap() {
-    console.log(keyMap);
+function inputLoop() {
     for (let i = 0; i < keyMap.length; i++) {
         keyPress(keyMap[i]);
     }
@@ -155,10 +192,20 @@ function keyPress(key) {
 
     switch (key) {
         case " ": fireMissile(); break
-        case "ArrowUp": shipSpeed++; break;
+        case "ArrowUp": {
+            shipSpeed++; 
+            shipHeading = shipDirection;
+            break;
+        }
         case "ArrowDown": shipSpeed--; break;
         case "ArrowLeft": shipDirection -= 4; break;
         case "ArrowRight": shipDirection += 4; break;
+    }
+
+    if (shipSpeed > 5) {   
+        shipSpeed = 5;
+    } else if (shipSpeed < 0) {
+        shipSpeed = 0;
     }
 
     if (shipDirection < 0) {
@@ -168,7 +215,6 @@ function keyPress(key) {
     }
 }
 
-var keyMap = [];
 
 window.addEventListener("keydown", function (event) {   // keyboard event listner
     if (event.defaultPrevented) {
@@ -190,18 +236,19 @@ window.addEventListener("keyup", function (event) {   // keyboard event listner
     event.preventDefault();
 }, true);
 
+function resetCanvas() {
+    shipDirection = startDirection;
+    shipHeading = startDirection;
+    shipSpeed = 0;
+    scoreSpan.innerHTML = score = 0;
 
-// window.addEventListener("keydown", function (event) {   // keyboard event listner
-//     if (event.defaultPrevented) {
-//         return;
-//     }
-//     switch (event.key) {
-//         case " ": keyPress(5); break
-//         case "ArrowUp": keyPress(1); break;
-//         case "ArrowDown": keyPress(2); break;
-//         case "ArrowLeft": keyPress(3); break;
-//         case "ArrowRight": keyPress(4); break;
-//         default: return;
-//     }
-//     event.preventDefault();
-// }, true);
+    doc.width = canvasSize[0];
+    doc.height = canvasSize[1];
+    options.style.width = canvasSize[0];
+
+    shipPosition[0] = canvasSize[0]/2;
+    shipPosition[1] = canvasSize[1]/2;
+
+    ctx.fillStyle = backgroundColour;
+    ctx.fillRect(0, 0, canvasSize[0], canvasSize[1]);
+}
