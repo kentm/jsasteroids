@@ -70,6 +70,10 @@ function updateShip(position, direction, heading, color) {
 
     shipPosition = endPosition;
 
+    if (endPosition[0] < -10 || endPosition[0] > canvasSize[0] + 10 || endPosition[1] < -10 || endPosition[1] > canvasSize[1] + 10) {
+        gameOver();
+    }
+
 }
 
 function drawMissiles() {
@@ -107,11 +111,42 @@ function updateMissiles(missile, i) {
     ctx.strokeStyle = color;
     ctx.stroke();
 
+    for (let j = 0; j < asteroids.length; j++) {
+        
+        if (asteroids[j][5] && isPointInPolygon(startPosition, asteroids[j][5]))
+        {
+            missiles.splice(i, 1);
+            if (asteroids[j][2] > 15) {
+                splitAsteroid(asteroids[j]);
+            }
+            asteroids.splice(j, 1);
+            score++;
+            scoreSpan.innerHTML = score;
+            break;
+        }
+    }
+
     missile[0] = endPosition;
 
     if (endPosition[0] < 0 || endPosition[0] > canvasSize[0] || endPosition[1] < 0 || endPosition[1] > canvasSize[1]) {
         missiles.splice(i, 1);
     }
+}
+
+function isPointInPolygon(point, polygon) {
+    let [x, y] = point;
+    let inside = false;
+
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        let [xi, yi] = polygon[i];
+        let [xj, yj] = polygon[j];
+
+        let intersect = ((yi > y) !== (yj > y)) &&
+                        (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
 }
 
 function fireMissile() {
@@ -132,37 +167,58 @@ function drawAsteroids() {
 }
 function updateAsteroids(asteroid, i) {
 
-    // if (asteroid[0] < -10 || asteroid[0] > canvasSize[0] + 10 || asteroid[1] < -10 || asteroid[1] > canvasSize[1] + 10) {
-    //     asteroids.splice(i, 1);
-    // }
+    if (asteroid[0] < -10 || asteroid[0] > canvasSize[0] + 10 || asteroid[1] < -10 || asteroid[1] > canvasSize[1] + 10) {
+        asteroids.splice(i, 1);
+    }
+
+    const point0 = [asteroid[0], asteroid[1]];
+    const point1 = [asteroid[0] + asteroid[2], asteroid[1] - asteroid[2] * 0.3];
+    const point2 = [asteroid[0] + asteroid[2] * 1.3, asteroid[1] + asteroid[2] * 0.3];
+    const point3 = [asteroid[0] + asteroid[2] * 0.7, asteroid[1] + asteroid[2] * 1.3];
+    const point4 = [asteroid[0], asteroid[1] + asteroid[2]];
     
     ctx.beginPath();
-    ctx.moveTo(asteroid[0], asteroid[1]);
-    ctx.lineTo(asteroid[0] + asteroid[2], asteroid[1]-asteroid[2]*0.3);
-    ctx.lineTo(asteroid[0] + asteroid[2]*1.3, asteroid[1] + asteroid[2]*0.3);
-    ctx.lineTo(asteroid[0] + asteroid[2]*0.7, asteroid[1] + asteroid[2]*1.3);
-    ctx.lineTo(asteroid[0], asteroid[1] + asteroid[2]);
+    ctx.moveTo(point0[0],point0[1]);
+    ctx.lineTo(point1[0],point1[1]);
+    ctx.lineTo(point2[0],point2[1]);
+    ctx.lineTo(point3[0],point3[1]);
+    ctx.lineTo(point4[0],point4[1]);
     ctx.closePath();
 
     ctx.lineWidth = 1;
     ctx.strokeStyle = shipColour;
     ctx.stroke();
 
+    // move the astroid towards the location of the ship
+    const direction = asteroid[3];
+    const speed = asteroid[4];
+    asteroid[0] += Math.cos(direction) * speed;
+    asteroid[1] += Math.sin(direction) * speed;
+    asteroid[5] = [point2, point3, point4, point0, point1];
+
+}
+
+function splitAsteroid(asteroid) {
+
+    const size = 15;
+    const x = asteroid[0];
+    const y = asteroid[1];
+    const direction = asteroid[3];
+    const speed = asteroid[4];   
+ 
+    asteroids.push([x, y, size, direction*1.2, speed]);
+    asteroids.push([x, y, size, direction*0.8, speed]);
 }
 
 function addAsteroid() {
-    const x = Math.floor(Math.random() * canvasSize[0]);
     const y = Math.floor(Math.random() * canvasSize[1]);
-    const f = Math.floor(Math.random() * 25) + 5;
+    const x = y > canvasSize[1]/2 ? 0 : canvasSize[0];
+    
+    const size = 30;
+    const direction = Math.atan2(shipPosition[1] - y, shipPosition[0] - x);
+    const speed = Math.floor(Math.random() * 6) + 3;
 
-    // if (x > canvasSize[0] / 2) {
-    //     x = 0;
-    // }
-    // if (y > canvasSize[1] / 2) {
-    //     y = canvasSize[1];
-    // }
-
-    asteroids.push([x, y, f]);
+    asteroids.push([x, y, size, direction, speed]);
 }
 
 function startGame() {
@@ -173,7 +229,7 @@ function startGame() {
 
 function startTimers() {
     mainTimer = setInterval(gameLoop, 100);
-    asteroidTimer = setInterval(asteroidLoop, 10000);
+    asteroidTimer = setInterval(asteroidLoop, 5000);
     keyPressTimer = setInterval(inputLoop, 50);
 }
 
@@ -181,6 +237,11 @@ function stopGame() {
     clearInterval(keyPressTimer);
     clearInterval(mainTimer);
     clearInterval(asteroidTimer);
+}
+
+function gameOver() {
+    stopGame();
+    alert("Game Over");
 }
 
 function inputLoop() {
