@@ -150,7 +150,7 @@ function isPointInPolygon(point, polygon) {
 }
 
 function fireMissile() {
-    if (missileTimerCount || missiles.length > 2) return;
+    if (missileTimerCount || missiles.length > 4) return;
     missiles.push([shipPosition, shipDirection, shipColour]);
     missileTimerCount = missleDelay;
 }
