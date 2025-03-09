@@ -113,11 +113,13 @@ function updateMissiles(missile, i) {
 
     for (let j = 0; j < asteroids.length; j++) {
         
-        if (asteroids[j][5] && isPointInPolygon(startPosition, asteroids[j][5]))
+        if (asteroids[j][5] && isAnyPointOnLineInsidePolygon(startPosition, endPosition, asteroids[j][5]))
         {
             missiles.splice(i, 1);
             if (asteroids[j][2] > 15) {
                 splitAsteroid(asteroids[j]);
+            } else {
+                score++;
             }
             asteroids.splice(j, 1);
             score++;
@@ -148,6 +150,73 @@ function isPointInPolygon(point, polygon) {
 
     return inside;
 }
+
+function doLinesIntersect(p1, p2, q1, q2) {
+    function crossProduct(a, b) {
+        return a[0] * b[1] - a[1] * b[0];
+    }
+
+    function subtract(a, b) {
+        return [a[0] - b[0], a[1] - b[1]];
+    }
+
+    let r = subtract(p2, p1);
+    let s = subtract(q2, q1);
+    let rxs = crossProduct(r, s);
+    let qpxr = crossProduct(subtract(q1, p1), r);
+
+    if (rxs === 0 && qpxr === 0) {
+        let t0 = (q1[0] - p1[0]) / (p2[0] - p1[0]);
+        let t1 = (q2[0] - p1[0]) / (p2[0] - p1[0]);
+        return (t0 >= 0 && t0 <= 1) || (t1 >= 0 && t1 <= 1);
+    }
+
+    if (rxs === 0) return false;
+
+    let t = crossProduct(subtract(q1, p1), s) / rxs;
+    let u = crossProduct(subtract(q1, p1), r) / rxs;
+
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+function doesLineIntersectPolygon(lineStart, lineEnd, polygon) {
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        if (doLinesIntersect(lineStart, lineEnd, polygon[i], polygon[j])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function isAnyPointOnLineInsidePolygon(lineStart, lineEnd, polygon) {
+    // Step 1: Check if either endpoint is inside the polygon
+    if (isPointInPolygon(lineStart, polygon) || isPointInPolygon(lineEnd, polygon)) {
+        return true;
+    }
+
+    // Step 2: Check if the line intersects any edge of the polygon
+    if (doesLineIntersectPolygon(lineStart, lineEnd, polygon)) {
+        return true;
+    }
+
+    return false;
+}
+
+// function isPointInPolygon(point, polygon) {
+//     let [x, y] = point;
+//     let inside = false;
+
+//     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+//         let [xi, yi] = polygon[i];
+//         let [xj, yj] = polygon[j];
+
+//         let intersect = ((yi > y) !== (yj > y)) &&
+//                         (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+//         if (intersect) inside = !inside;
+//     }
+
+//     return inside;
+// }
 
 function fireMissile() {
     if (missileTimerCount || missiles.length > 4) return;
