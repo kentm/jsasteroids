@@ -49,19 +49,15 @@ function updateShip(position, direction, heading, color) {
 
     ctx.beginPath();
 
-    ctx.moveTo(position[0], position[1]);
-    ctx.lineTo(
-        position[0] + Math.cos(direction * Math.PI / 180) * 20,
-        position[1] + Math.sin(direction * Math.PI / 180) * 20
-    )
-    ctx.lineTo(
-        position[0] + Math.cos((direction + angleOffset) * Math.PI / 180) * 20,
-        position[1] + Math.sin((direction + angleOffset) * Math.PI / 180) * 20
-    )
-    ctx.lineTo(
-        position[0] + Math.cos((direction - angleOffset) * Math.PI / 180) * 20,
-        position[1] + Math.sin((direction - angleOffset) * Math.PI / 180) * 20
-    )
+    const point0 = [position[0], position[1]];
+    const point1 = [position[0] + Math.cos(direction * Math.PI / 180) * 20, position[1] + Math.sin(direction * Math.PI / 180) * 20];
+    const point2 = [position[0] + Math.cos((direction + angleOffset) * Math.PI / 180) * 20, position[1] + Math.sin((direction + angleOffset) * Math.PI / 180) * 20];
+    const point3 = [position[0] + Math.cos((direction - angleOffset) * Math.PI / 180) * 20, position[1] + Math.sin((direction - angleOffset) * Math.PI / 180) * 20];
+
+    ctx.moveTo(point0[0], point0[1]);
+    ctx.lineTo(point1[0], point1[1]);
+    ctx.lineTo(point2[0], point2[1]);
+    ctx.lineTo(point3[0], point3[1]);
     ctx.closePath();
 
     ctx.lineWidth = 1;
@@ -74,6 +70,11 @@ function updateShip(position, direction, heading, color) {
         gameOver();
     }
 
+    for (let i = 0; i < asteroids.length; i++) {
+        if (asteroids[i][5] && doPolygonsIntersect(asteroids[i][5], [point0, point1, point2, point3])) {
+            gameOver();
+        }
+    }
 }
 
 function drawMissiles() {
@@ -188,35 +189,26 @@ function doesLineIntersectPolygon(lineStart, lineEnd, polygon) {
     return false;
 }
 
-function isAnyPointOnLineInsidePolygon(lineStart, lineEnd, polygon) {
-    // Step 1: Check if either endpoint is inside the polygon
-    if (isPointInPolygon(lineStart, polygon) || isPointInPolygon(lineEnd, polygon)) {
-        return true;
+function doPolygonsIntersect(polygon1, polygon2) {
+    for (let i = 0, j = polygon1.length - 1; i < polygon1.length; j = i++) {
+        for (let k = 0, l = polygon2.length - 1; k < polygon2.length; l = k++) {
+            if (doLinesIntersect(polygon1[i], polygon1[j], polygon2[k], polygon2[l])) {
+                return true;
+            }
+        }
     }
-
-    // Step 2: Check if the line intersects any edge of the polygon
-    if (doesLineIntersectPolygon(lineStart, lineEnd, polygon)) {
-        return true;
-    }
-
     return false;
 }
 
-// function isPointInPolygon(point, polygon) {
-//     let [x, y] = point;
-//     let inside = false;
-
-//     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-//         let [xi, yi] = polygon[i];
-//         let [xj, yj] = polygon[j];
-
-//         let intersect = ((yi > y) !== (yj > y)) &&
-//                         (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-//         if (intersect) inside = !inside;
-//     }
-
-//     return inside;
-// }
+function isAnyPointOnLineInsidePolygon(lineStart, lineEnd, polygon) {
+    if (isPointInPolygon(lineStart, polygon) || isPointInPolygon(lineEnd, polygon)) {
+        return true;
+    }
+    if (doesLineIntersectPolygon(lineStart, lineEnd, polygon)) {
+        return true;
+    }
+    return false;
+}
 
 function fireMissile() {
     if (missileTimerCount || missiles.length > 4) return;
@@ -225,7 +217,6 @@ function fireMissile() {
 }
 
 function asteroidLoop() {
-    console.log(asteroids);
     addAsteroid();
 }
 
