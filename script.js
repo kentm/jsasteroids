@@ -301,7 +301,11 @@ function stopGame() {
 
 function gameOver() {
     stopGame();
-    alert("Game Over");
+    stopGame();
+
+    ctx.fillStyle = shipColour;
+    ctx.font = "20px Monospace";
+    ctx.fillText("GAME OVER", 20, 40);
 }
 
 function inputLoop() {
